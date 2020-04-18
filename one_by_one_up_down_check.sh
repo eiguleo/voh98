@@ -21,6 +21,7 @@ getNicInfo(){
 upAllNic(){
 for uuidd in `nmcli -m multiline  -f UUID connection | awk '{print $2}'` ; do nmcli connection up uuid $uuidd   ; done
    sed -i  's/\(.*\)\(.\)/\11/g'  ./nic_status_uuid
+   sleep 3
 }
 
 
@@ -33,12 +34,12 @@ downAllNic(){
 checkDownNic(){
     devname=$2
     #nmcli connection down   $uuid
-    ping -c 2 -w 5 47.56.88.11 -I $devname > /dev/null 2>&1
+    ping -c 2 -w 10 1.1.13.2 -I $devname 
     if [ $? == 0 ]; then
-	echo "ping success,checkresult Faild"
+	echo "ping success,checkresult----Faild"
 	return 3
     else
-	echo "ping failed,check result  Through"
+	echo "ping failed,check result----Through"
 	return 0
     fi
 }
@@ -46,12 +47,12 @@ checkDownNic(){
 checkUpNic(){
     devname=$2
     #nmcli connection up $uuid
-    ping -c 2 -w 5 47.56.88.11 -I $devname  > /dev/null 2>&1
+    ping -c 2 -w 10 1.1.13.2 -I $devname 
     if [ $? != 0 ]; then
-	echo "Ping Faild,check result-----faild"
+	echo "Ping Faild,check result----Faild"
 	return 3
     else
-	echo "Ping success,check result----through"
+	echo "Ping success,check result----Through"
 	return 0
     fi
     
@@ -81,6 +82,7 @@ checkNic(){
 
 #up the nic its uuid is $uuid
 upOneNic(){
+	echo "!!!!!  up the nic"
     uuid=$1
     nmcli con up uuid $uuid
     
@@ -89,6 +91,7 @@ upOneNic(){
 #set the nic whose uuid is $uuid
 downOneNic(){
     uuid=$1
+    echo "!!!! down the nic"
     nmcli con  down  uuid $uuid
 }
 
@@ -121,6 +124,7 @@ getNicInfo
 
 #step 2
 #read line , set status field in the line , check the wether the status agree with ping result 
+echo 1 > /proc/sys/net/ipv4/conf/all/rp_filter
 
 while read line
 do
@@ -130,18 +134,21 @@ do
     #getDevByUuid $line
     upOneNic $upStatusLine
     checkUpNic $upStatusLine
+    sleep 10
     #echo $upState
     downStatusLine=`echo $line | sed  "s/\(.*\)\(.\)/\10/g"`
     downOneNic $downStatusLine
     checkDownNic $downStatusLine
     #cat nic_status_uuid
-    #echo -e "-------------"
+    echo -e "-------------"
     #downOneNic $line
     #checkUpNic $
     #cat nic_status_uuid
-    echo -e "max loop ###########\r\n\r\n"
+    echo -e "max loop \r\n\r\n##########\r\n\r\n"
+    sleep 10
     
 done < nic_status_uuid
-
-
+#resolve 1+ nics down ping 
+#http://bbs.chinaunix.net/thread-1622182-1-1.html
 upAllNic
+sleep 10
