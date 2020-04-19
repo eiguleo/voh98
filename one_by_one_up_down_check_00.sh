@@ -15,12 +15,19 @@
 #c4b34234-7690-1497-5700-384cbsdfsda9  enp4s0  0
 getNicInfo(){
     #nmcli  -f  UUID,DEVICE  connection | awk 'NR>1{print $0,1}' > ./nic_status_uuid
-    for uuidd in `nmcli -m multiline  -f UUID connection | awk '{print $2}'` ; do echo $(nmcli -m  tabular -g GENERAL.UUID,GENERAL.DEVICES,IP4.ADDRESS connection show uuid $uuidd  | tr '\n' ' ')  |  sed 's/\/.*/ 1/g' ; done  > ./nic_status_uuid
+    for uuidd in `nmcli -m multiline  -f UUID connection | awk '{print $2}'`
+    do
+	nmcli connection up uuid $uuidd > /dev/null 2>&1
+	echo $(nmcli -m  tabular -g GENERAL.UUID,GENERAL.DEVICES,IP4.ADDRESS connection show uuid $uuidd  | tr '\n' ' ')  |  sed 's/\/.*/ 1/g'
+    done  > ./nic_status_uuid
     }
 
 #up all nic ,and set nic status to 1
 upAllNic(){
-for uuidd in `nmcli -m multiline  -f UUID connection | awk '{print $2}'` ; do nmcli connection up uuid $uuidd   ; done
+    for uuidd in `nmcli -m multiline  -f UUID connection | awk '{print $2}'`
+    do
+	nmcli connection up uuid $uuidd
+    done
    sed -i  's/\(.*\)\(.\)/\11/g'  ./nic_status_uuid
    sleep 3
 }
@@ -33,7 +40,7 @@ downAllNic(){
 }
 
 checkDownNic(){
-    devname=$2
+    devname=$3
     #nmcli connection down   $uuid
     ping -c 2 -w 10 1.1.13.2 -I $devname 
     if [ $? == 0 ]; then
@@ -46,7 +53,7 @@ checkDownNic(){
 }
 
 checkUpNic(){
-    devname=$2
+    devname=$3
     #nmcli connection up $uuid
     ping -c 2 -w 10 1.1.13.2 -I $devname 
     if [ $? != 0 ]; then
@@ -125,11 +132,17 @@ getNicInfo
 
 #step 2
 #read line , set status field in the line , check the wether the status agree with ping result 
-echo 1 > /proc/sys/net/ipv4/conf/all/rp_filter
+
+
+#resolve 1+ nics down ping 
+#http://bbs.chinaunix.net/thread-1622182-1-1.html
+upAllNic
+
+downAllNic
 
 while read line
 do
-    #echo $lin 
+    #echo $lin
     upStatusLine=`echo $line | sed  "s/\(.*\)\(.\)/\11/g"`
     echo $upStatusLine
     #getDevByUuid $line
@@ -147,9 +160,5 @@ do
     #cat nic_status_uuid
     echo -e "max loop \r\n\r\n##########\r\n\r\n"
     sleep 10
-    
+
 done < nic_status_uuid
-#resolve 1+ nics down ping 
-#http://bbs.chinaunix.net/thread-1622182-1-1.html
-upAllNic
-sleep 10
