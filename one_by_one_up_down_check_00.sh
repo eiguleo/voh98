@@ -42,7 +42,7 @@ downAllNic(){
 checkDownNic(){
     devname=$3
     #nmcli connection down   $uuid
-    ping -c 2 -w 10 1.1.13.2 -I $devname 
+    ping -c 2 -w 10 baidu.com -I $devname 
     if [ $? == 0 ]; then
 	echo "ping success,checkresult----Faild"
 	return 3
@@ -55,7 +55,7 @@ checkDownNic(){
 checkUpNic(){
     devname=$3
     #nmcli connection up $uuid
-    ping -c 2 -w 10 1.1.13.2 -I $devname 
+    ping -c 2 -w 10 baidu.com -I $devname 
     if [ $? != 0 ]; then
 	echo "Ping Faild,check result----Faild"
 	return 3
@@ -159,6 +159,7 @@ do
     #checkUpNic $
     #cat nic_status_uuid
     echo -e "max loop \r\n\r\n##########\r\n\r\n"
-    sleep 10
+    sleep 5
 
 done < nic_status_uuid
+upAllNic
